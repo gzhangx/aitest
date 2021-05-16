@@ -1,5 +1,5 @@
-//https://www.tensorflow.org/tutorials/text/nmt_with_attention
-//chcp 936
+## https://www.tensorflow.org/tutorials/text/nmt_with_attention
+## chcp 936
 import tensorflow as tf
 
 import matplotlib.pyplot as plt
