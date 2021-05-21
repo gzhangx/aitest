@@ -149,3 +149,103 @@ attention_result, attention_weights = attention_layer(sample_hidden, sample_outp
 
 print("Attention result shape: (batch size, units)", attention_result.shape)
 print("Attention weights shape: (batch_size, sequence_length, 1)", attention_weights.shape)
+
+
+class Decoder(tf.keras.Model):
+  def __init__(self, vocab_size, embedding_dim, dec_units, batch_sz):
+    super(Decoder, self).__init__()
+    self.batch_sz = batch_sz
+    self.dec_units = dec_units
+    self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim)
+    self.gru = tf.keras.layers.GRU(self.dec_units,
+                                   return_sequences=True,
+                                   return_state=True,
+                                   recurrent_initializer='glorot_uniform')
+    self.fc = tf.keras.layers.Dense(vocab_size)
+    # used for attention
+    self.attention = BahdanauAttention(self.dec_units)
+  def call(self, x, hidden, enc_output):
+    # enc_output shape == (batch_size, max_length, hidden_size)
+    context_vector, attention_weights = self.attention(hidden, enc_output)
+    # x shape after passing through embedding == (batch_size, 1, embedding_dim)
+    x = self.embedding(x)
+    # x shape after concatenation == (batch_size, 1, embedding_dim + hidden_size)
+    x = tf.concat([tf.expand_dims(context_vector, 1), x], axis=-1)
+    # passing the concatenated vector to the GRU
+    output, state = self.gru(x)
+    # output shape == (batch_size * 1, hidden_size)
+    output = tf.reshape(output, (-1, output.shape[2]))
+    # output shape == (batch_size, vocab)
+    x = self.fc(output)
+    return x, state, attention_weights
+
+
+decoder = Decoder(vocab_tar_size, embedding_dim, units, BATCH_SIZE)
+
+sample_decoder_output, _, _ = decoder(tf.random.uniform((BATCH_SIZE, 1)),
+                                      sample_hidden, sample_output)
+
+print('Decoder output shape: (batch_size, vocab size)',
+      sample_decoder_output.shape)
+
+
+#Define the optimizer and the loss function
+
+optimizer = tf.keras.optimizers.Adam()
+loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True,
+                                                            reduction='none')
+
+
+def loss_function(real, pred):
+  mask = tf.math.logical_not(tf.math.equal(real, 0))
+  loss_ = loss_object(real, pred)
+  mask = tf.cast(mask, dtype=loss_.dtype)
+  loss_ *= mask
+  return tf.reduce_mean(loss_)
+
+
+checkpoint_dir = './training_checkpoints'
+checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
+checkpoint = tf.train.Checkpoint(optimizer=optimizer,
+                                 encoder=encoder,
+                                 decoder=decoder)
+
+
+@tf.function
+def train_step(inp, targ, enc_hidden):
+  loss = 0
+  with tf.GradientTape() as tape:
+    enc_output, enc_hidden = encoder(inp, enc_hidden)
+    dec_hidden = enc_hidden
+    dec_input = tf.expand_dims(
+        [targ_lang.word_index['<start>']] * BATCH_SIZE, 1)
+    # Teacher forcing - feeding the target as the next input
+    for t in range(1, targ.shape[1]):
+      # passing enc_output to the decoder
+      predictions, dec_hidden, _ = decoder(dec_input, dec_hidden, enc_output)
+      loss += loss_function(targ[:, t], predictions)
+      # using teacher forcing
+      dec_input = tf.expand_dims(targ[:, t], 1)
+  batch_loss = (loss / int(targ.shape[1]))
+  variables = encoder.trainable_variables + decoder.trainable_variables
+  gradients = tape.gradient(loss, variables)
+  optimizer.apply_gradients(zip(gradients, variables))
+  return batch_loss
+
+
+EPOCHS = 10
+
+for epoch in range(EPOCHS):
+  start = time.time()
+  enc_hidden = encoder.initialize_hidden_state()
+  total_loss = 0
+  for (batch, (inp, targ)) in enumerate(dataset.take(steps_per_epoch)):
+    batch_loss = train_step(inp, targ, enc_hidden)
+    total_loss += batch_loss
+    if batch % 100 == 0:
+      print(f'Epoch {epoch+1} Batch {batch} Loss {batch_loss.numpy():.4f}')
+  # saving (checkpoint) the model every 2 epochs
+  if (epoch + 1) % 2 == 0:
+    checkpoint.save(file_prefix=checkpoint_prefix)
+  print(f'Epoch {epoch+1} Loss {total_loss/steps_per_epoch:.4f}')
+  print(f'Time taken for 1 epoch {time.time()-start:.2f} sec\n')
