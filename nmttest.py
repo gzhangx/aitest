@@ -44,7 +44,7 @@ def tokenize(lang):
   return tensor, lang_tokenizer
 
 fileContent="你好\tyou are good\n你坏\tyou are bad\n你特别好\tyou are very good\n你特别坏\tyou are very bad"
-fileContent="ou re ood\tyou are good\nou re bad\tyou are bad\nou re ery ood\tyou are very good\nou re ery ad\tyou are very bad\nteest\ttest\net us go\tlet us go"
+fileContent = "ou re ood tld t tt ttt\tyou are good\nou re bad tld t tt ttt\tyou are bad\nou re ery ood tld t tt ttt\tyou are very good\nou re ery ad tld t tt ttt\tyou are very bad\nteest tld t tt ttt\ttest\net us go tld t tt ttt\tlet us go"
 def create_dataset(path, num_examples):
   #lines = io.open(path, encoding='UTF-8').read().strip().split('\n')
   lines = fileContent.strip().split('\n')
