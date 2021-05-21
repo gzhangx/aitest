@@ -44,6 +44,7 @@ def tokenize(lang):
   return tensor, lang_tokenizer
 
 fileContent="你好\tyou are good\n你坏\tyou are bad\n你特别好\tyou are very good\n你特别坏\tyou are very bad"
+fileContent="ou re ood\tyou are good\nou re bad\tyou are bad\nou re ery ood\tyou are very good\nou re ery ad\tyou are very bad\nteest\ttest\net us go\tlet us go"
 def create_dataset(path, num_examples):
   #lines = io.open(path, encoding='UTF-8').read().strip().split('\n')
   lines = fileContent.strip().split('\n')
@@ -62,6 +63,16 @@ def load_dataset(path, num_examples=None):
 num_examples = 30000
 #input_tensor, target_tensor, inp_lang, targ_lang = load_dataset(path_to_file,num_examples)
 input_tensor, target_tensor, inp_lang, targ_lang = load_dataset('no',num_examples)
+
+# targ_lang.word_index
+#{'<start>': 1, '<end>': 2, 'ou': 3, 're': 4, 'ood': 5, 'ery': 6, 'bad': 7, 'ad': 8, 'teest': 9, 'et': 10, 'us': 11, 'go': 12}
+#target_tensor
+#array([[ 1,  3,  4,  5,  2,  0],
+#       [ 1,  3,  4,  7,  2,  0],
+#       [ 1,  3,  4,  6,  5,  2],
+#       [ 1,  3,  4,  6,  8,  2],
+#       [ 1,  9,  2,  0,  0,  0],
+#       [ 1, 10, 11, 12,  2,  0]]
 
 # Calculate max_length of the target tensors
 max_length_targ, max_length_inp = target_tensor.shape[1], input_tensor.shape[1]
@@ -217,8 +228,7 @@ def train_step(inp, targ, enc_hidden):
   with tf.GradientTape() as tape:
     enc_output, enc_hidden = encoder(inp, enc_hidden)
     dec_hidden = enc_hidden
-    dec_input = tf.expand_dims(
-        [targ_lang.word_index['<start>']] * BATCH_SIZE, 1)
+    dec_input = tf.expand_dims([targ_lang.word_index['<start>']] * BATCH_SIZE, 1)
     # Teacher forcing - feeding the target as the next input
     for t in range(1, targ.shape[1]):
       # passing enc_output to the decoder
