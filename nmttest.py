@@ -203,7 +203,7 @@ print('Decoder output shape: (batch_size, vocab size)',
 
 #Define the optimizer and the loss function
 
-optimizer = tf.keras.optimizers.Adam()
+optimizer = tf.keras.optimizers.Adam(learning_rate=0.00001)
 loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True,
                                                             reduction='none')
 
@@ -216,12 +216,13 @@ def loss_function(real, pred):
   return tf.reduce_mean(loss_)
 
 
-checkpoint_dir = './training_checkpoints'
+checkpoint_dir = 'D:\\work\\aitest\\training_checkpoints'
 checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
 checkpoint = tf.train.Checkpoint(optimizer=optimizer,
                                  encoder=encoder,
                                  decoder=decoder)
 
+checkpoint.restore('D:\\work\\aitest\\training_checkpoints\\ckpt-31')
 
 @tf.function
 def train_step(inp, targ, enc_hidden):
@@ -257,6 +258,7 @@ for epoch in range(EPOCHS):
       print(f'Epoch {epoch+1} Batch {batch} Loss {batch_loss.numpy():.4f}')
   # saving (checkpoint) the model every 2 epochs
   #if (epoch + 1) % 2 == 0:
+  print(checkpoint_prefix)
   checkpoint.save(file_prefix=checkpoint_prefix)
   print(f'Epoch {epoch+1} Loss {total_loss/steps_per_epoch:.4f}')
   print(f'Time taken for 1 epoch {time.time()-start:.2f} sec\n')
@@ -265,15 +267,24 @@ for epoch in range(EPOCHS):
 def evaluate(sentence):
   attention_plot = np.zeros((max_length_targ, max_length_inp))
   sentence = preprocess_sentence(sentence)
+  print("sentence is ")
+  print(sentence)
   inputs = [inp_lang.word_index[i] for i in sentence.split(' ')]
   inputs = tf.keras.preprocessing.sequence.pad_sequences([inputs],
                                                          maxlen=max_length_inp,
                                                          padding='post')
+  print(inputs)                                                         
   inputs = tf.convert_to_tensor(inputs)
+  print("input tensor")
+  print(inputs)
   result = ''
   hidden = [tf.zeros((1, units))]
   enc_out, enc_hidden = encoder(inputs, hidden)
   dec_hidden = enc_hidden
+  print("dec hidden")
+  print(dec_hidden)
+  print("enc_out")
+  print(enc_out)
   dec_input = tf.expand_dims([targ_lang.word_index['<start>']], 0)
   for t in range(max_length_targ):
     predictions, dec_hidden, attention_weights = decoder(dec_input,
@@ -284,12 +295,15 @@ def evaluate(sentence):
     attention_plot[t] = attention_weights.numpy()
     predicted_id = tf.argmax(predictions[0]).numpy()
     result += targ_lang.index_word[predicted_id] + ' '
+    print("prdid="+str(predicted_id)+" res="+result)
     if targ_lang.index_word[predicted_id] == '<end>':
       return result, sentence, attention_plot
     # the predicted ID is fed back into the model
     dec_input = tf.expand_dims([predicted_id], 0)
   return result, sentence, attention_plot
 
+
+evaluate('good')
 
 # function for plotting the attention weights
 def plot_attention(attention, sentence, predicted_sentence):
@@ -315,6 +329,7 @@ def translate(sentence):
 
 translate(u'good')
 
+evaluate('good')
 
 for (batch, (inp, targ)) in enumerate(dataset.take(steps_per_epoch)):
     print(batch)
