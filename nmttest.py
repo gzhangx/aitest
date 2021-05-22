@@ -43,9 +43,10 @@ def tokenize(lang):
                                                          padding='post')
   return tensor, lang_tokenizer
 
+
 #fileContent="你好帅帅\tyou are good\n你坏帅帅\tyou are bad\n你特别好帅帅\tyou are very good\n你特别坏帅帅\tyou are very bad"
 #fileContent = "ou re ood tld t tt ttt\tyou are good\nou re bad tld t tt ttt\tyou are bad\nou re ery ood tld t tt ttt\tyou are very good\nou re ery ad tld t tt ttt\tyou are very bad\nteest tld t tt ttt\ttest\net us go tld t tt ttt\tlet us go"
-fileContent="ni hao shuai shuai\tyou are good\nni huai\tyou are bad\nni te bie hao\tyou are very good\nni te bie huai\tyou are very bad"
+fileContent = "ni hao shuai shuai\tyou are good\nni huai\tyou are bad\nni te bie hao\tyou are very good\nni te bie huai\tyou are very bad\nhuai\tbad\nhao\tgood"
 def create_dataset(path, num_examples):
   #lines = io.open(path, encoding='UTF-8').read().strip().split('\n')
   lines = fileContent.strip().split('\n')
@@ -203,7 +204,7 @@ print('Decoder output shape: (batch_size, vocab size)',
 
 #Define the optimizer and the loss function
 
-optimizer = tf.keras.optimizers.Adam(learning_rate=0.00001)
+optimizer = tf.keras.optimizers.Adam(learning_rate=0.000001)
 loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True,
                                                             reduction='none')
 
@@ -216,13 +217,13 @@ def loss_function(real, pred):
   return tf.reduce_mean(loss_)
 
 
-checkpoint_dir = 'D:\\work\\aitest\\training_checkpoints'
+checkpoint_dir = 'D:\\work\\aitestsaves'
 checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
 checkpoint = tf.train.Checkpoint(optimizer=optimizer,
                                  encoder=encoder,
                                  decoder=decoder)
 
-checkpoint.restore('D:\\work\\aitest\\training_checkpoints\\ckpt-31')
+checkpoint.restore('D:\\work\\aitestsaves\\ckpt-150')
 
 @tf.function
 def train_step(inp, targ, enc_hidden):
@@ -257,12 +258,15 @@ for epoch in range(EPOCHS):
     if batch % 100 == 0:
       print(f'Epoch {epoch+1} Batch {batch} Loss {batch_loss.numpy():.4f}')
   # saving (checkpoint) the model every 2 epochs
-  #if (epoch + 1) % 2 == 0:
-  print(checkpoint_prefix)
-  checkpoint.save(file_prefix=checkpoint_prefix)
-  print(f'Epoch {epoch+1} Loss {total_loss/steps_per_epoch:.4f}')
+  if (epoch + 1) % 100 == 0:
+    # print(checkpoint_prefix)
+    checkpoint.save(file_prefix=checkpoint_prefix)    
+  if total_loss < 0.000001:
+    break
+  print(f'Epoch {epoch+1} Loss {total_loss/steps_per_epoch:.4f} {total_loss}')
   print(f'Time taken for 1 epoch {time.time()-start:.2f} sec\n')
 
+checkpoint.save(file_prefix=checkpoint_prefix)
 
 def evaluate(sentence):
   attention_plot = np.zeros((max_length_targ, max_length_inp))
