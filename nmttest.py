@@ -43,8 +43,9 @@ def tokenize(lang):
                                                          padding='post')
   return tensor, lang_tokenizer
 
-fileContent="你好\tyou are good\n你坏\tyou are bad\n你特别好\tyou are very good\n你特别坏\tyou are very bad"
-fileContent = "ou re ood tld t tt ttt\tyou are good\nou re bad tld t tt ttt\tyou are bad\nou re ery ood tld t tt ttt\tyou are very good\nou re ery ad tld t tt ttt\tyou are very bad\nteest tld t tt ttt\ttest\net us go tld t tt ttt\tlet us go"
+#fileContent="你好帅帅\tyou are good\n你坏帅帅\tyou are bad\n你特别好帅帅\tyou are very good\n你特别坏帅帅\tyou are very bad"
+#fileContent = "ou re ood tld t tt ttt\tyou are good\nou re bad tld t tt ttt\tyou are bad\nou re ery ood tld t tt ttt\tyou are very good\nou re ery ad tld t tt ttt\tyou are very bad\nteest tld t tt ttt\ttest\net us go tld t tt ttt\tlet us go"
+fileContent="ni hao shuai shuai\tyou are good\nni huai\tyou are bad\nni te bie hao\tyou are very good\nni te bie huai\tyou are very bad"
 def create_dataset(path, num_examples):
   #lines = io.open(path, encoding='UTF-8').read().strip().split('\n')
   lines = fileContent.strip().split('\n')
@@ -255,8 +256,8 @@ for epoch in range(EPOCHS):
     if batch % 100 == 0:
       print(f'Epoch {epoch+1} Batch {batch} Loss {batch_loss.numpy():.4f}')
   # saving (checkpoint) the model every 2 epochs
-  if (epoch + 1) % 2 == 0:
-    checkpoint.save(file_prefix=checkpoint_prefix)
+  #if (epoch + 1) % 2 == 0:
+  checkpoint.save(file_prefix=checkpoint_prefix)
   print(f'Epoch {epoch+1} Loss {total_loss/steps_per_epoch:.4f}')
   print(f'Time taken for 1 epoch {time.time()-start:.2f} sec\n')
 
@@ -313,3 +314,12 @@ def translate(sentence):
 
 
 translate(u'good')
+
+
+for (batch, (inp, targ)) in enumerate(dataset.take(steps_per_epoch)):
+    print(batch)
+    print('b=' + str(batch))
+    print(inp)
+    print('inp')
+    print('targ')
+    print(targ)
