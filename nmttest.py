@@ -25,10 +25,10 @@ def preprocess_sentence(w):
   # creating a space between a word and the punctuation following it
   # eg: "he is a boy." => "he is a boy ."
   # Reference:- https://stackoverflow.com/questions/3645931/python-padding-punctuation-with-white-spaces-keeping-punctuation
-  w = re.sub(r"([?.!,¿])", r" \1 ", w)
+  # w = re.sub(r"([?.!,¿])", r" \1 ", w)
   w = re.sub(r'[" "]+', " ", w)
   # replacing everything with space except (a-z, A-Z, ".", "?", "!", ",")
-  w = re.sub(r"[^a-zA-Z?.!,¿]+", " ", w)
+  # w = re.sub(r"[^a-zA-Z?.!,¿]+", " ", w)
   w = w.strip()
   # adding a start and an end token to the sentence
   # so that the model know when to start and stop predicting.
@@ -44,9 +44,9 @@ def tokenize(lang):
   return tensor, lang_tokenizer
 
 
-#fileContent="你好帅帅\tyou are good\n你坏帅帅\tyou are bad\n你特别好帅帅\tyou are very good\n你特别坏帅帅\tyou are very bad"
-#fileContent = "ou re ood tld t tt ttt\tyou are good\nou re bad tld t tt ttt\tyou are bad\nou re ery ood tld t tt ttt\tyou are very good\nou re ery ad tld t tt ttt\tyou are very bad\nteest tld t tt ttt\ttest\net us go tld t tt ttt\tlet us go"
-fileContent = "ni hao shuai shuai\tyou are good\nni huai\tyou are bad\nni te bie hao\tyou are very good\nni te bie huai\tyou are very bad\nhuai\tbad\nhao\tgood"
+fileContent="你好\tyou are good\n你坏\tyou are bad\n你特别好\tyou are very good\n你特别坏\tyou are very bad"
+# fileContent = "ou re ood tld t tt ttt\tyou are good\nou re bad tld t tt ttt\tyou are bad\nou re ery ood tld t tt ttt\tyou are very good\nou re ery ad tld t tt ttt\tyou are very bad\nteest tld t tt ttt\ttest\net us go tld t tt ttt\tlet us go"
+# fileContent = "ni hao shuai shuai\tyou are good\nni huai\tyou are bad\nni te bie hao\tyou are very good\nni te bie huai\tyou are very bad\nhuai\tbad\nhao\tgood"
 def create_dataset(path, num_examples):
   #lines = io.open(path, encoding='UTF-8').read().strip().split('\n')
   lines = fileContent.strip().split('\n')
@@ -223,7 +223,7 @@ checkpoint = tf.train.Checkpoint(optimizer=optimizer,
                                  encoder=encoder,
                                  decoder=decoder)
 
-checkpoint.restore('D:\\work\\aitestsaves\\ckpt-150')
+# checkpoint.restore('D:\\work\\aitestsaves\\ckpt-150')
 
 @tf.function
 def train_step(inp, targ, enc_hidden):
@@ -246,7 +246,7 @@ def train_step(inp, targ, enc_hidden):
   return batch_loss
 
 
-EPOCHS = 10
+EPOCHS = 300
 
 for epoch in range(EPOCHS):
   start = time.time()
@@ -335,10 +335,3 @@ translate(u'good')
 
 evaluate('good')
 
-for (batch, (inp, targ)) in enumerate(dataset.take(steps_per_epoch)):
-    print(batch)
-    print('b=' + str(batch))
-    print(inp)
-    print('inp')
-    print('targ')
-    print(targ)
