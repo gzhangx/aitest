@@ -14,6 +14,7 @@ import io
 import time
 
 
+
 def unicode_to_ascii(s):
   return ''.join(c for c in unicodedata.normalize('NFD', s)
                  if unicodedata.category(c) != 'Mn')
@@ -34,7 +35,6 @@ def preprocess_sentence(w):
   w = '<start> ' + w + ' <end>'
   return w
 
-
 def tokenize(lang):
   lang_tokenizer = tf.keras.preprocessing.text.Tokenizer(filters='')
   lang_tokenizer.fit_on_texts(lang)
@@ -44,18 +44,15 @@ def tokenize(lang):
   return tensor, lang_tokenizer
 
 
-fileContent = "你好\tyou are good\n你坏\tyou are bad\n你特别好\tyou are very good\n你特别坏\tyou are very bad"
+fileContent="你好\tyou are good\n你坏\tyou are bad\n你特别好\tyou are very good\n你特别坏\tyou are very bad"
 # fileContent = "ou re ood tld t tt ttt\tyou are good\nou re bad tld t tt ttt\tyou are bad\nou re ery ood tld t tt ttt\tyou are very good\nou re ery ad tld t tt ttt\tyou are very bad\nteest tld t tt ttt\ttest\net us go tld t tt ttt\tlet us go"
 # fileContent = "ni hao shuai shuai\tyou are good\nni huai\tyou are bad\nni te bie hao\tyou are very good\nni te bie huai\tyou are very bad\nhuai\tbad\nhao\tgood"
-
-
 def create_dataset(path, num_examples):
   #lines = io.open(path, encoding='UTF-8').read().strip().split('\n')
   lines = fileContent.strip().split('\n')
   word_pairs = [[preprocess_sentence(w) for w in line.split('\t')]
                 for line in lines[:num_examples]]
   return zip(*word_pairs)
-
 
 def load_dataset(path, num_examples=None):
   # creating cleaned input, output pairs
@@ -64,12 +61,10 @@ def load_dataset(path, num_examples=None):
   target_tensor, targ_lang_tokenizer = tokenize(targ_lang)
   return input_tensor, target_tensor, inp_lang_tokenizer, targ_lang_tokenizer
 
-
 # Try experimenting with the size of that dataset
 num_examples = 30000
 #input_tensor, target_tensor, inp_lang, targ_lang = load_dataset(path_to_file,num_examples)
-input_tensor, target_tensor, inp_lang, targ_lang = load_dataset(
-    'no', num_examples)
+input_tensor, target_tensor, inp_lang, targ_lang = load_dataset('no',num_examples)
 
 # targ_lang.word_index
 #{'<start>': 1, '<end>': 2, 'ou': 3, 're': 4, 'ood': 5, 'ery': 6, 'bad': 7, 'ad': 8, 'teest': 9, 'et': 10, 'us': 11, 'go': 12}
@@ -84,11 +79,11 @@ input_tensor, target_tensor, inp_lang, targ_lang = load_dataset(
 # Calculate max_length of the target tensors
 max_length_targ, max_length_inp = target_tensor.shape[1], input_tensor.shape[1]
 
-
 def convert(lang, tensor):
   for t in tensor:
     if t != 0:
       print(f'{t} ----> {lang.index_word[t]}')
+
 
 
 class Encoder(tf.keras.Model):
@@ -102,7 +97,6 @@ class Encoder(tf.keras.Model):
                                    return_state=True,
                                    recurrent_initializer='glorot_uniform')
     print(f'done init gru ')
-
   def call(self, x, hidden):
     print(f'in call ')
     print(x)
@@ -111,7 +105,6 @@ class Encoder(tf.keras.Model):
     print(x)
     output, state = self.gru(x, initial_state=hidden)
     return output, state
-
   def initialize_hidden_state(self):
     return tf.zeros((self.batch_sz, self.enc_units))
 
@@ -119,14 +112,13 @@ class Encoder(tf.keras.Model):
 BUFFER_SIZE = len(input_tensor)
 BATCH_SIZE = 2
 steps_per_epoch = len(input_tensor)//BATCH_SIZE
-embedding_dim = 3  # originally 256
+embedding_dim = 3  ### originally 256
 units = 1024
 vocab_inp_size = len(inp_lang.word_index)+1
 vocab_tar_size = len(targ_lang.word_index)+1
 
 
-dataset = tf.data.Dataset.from_tensor_slices(
-    (input_tensor, target_tensor)).shuffle(BUFFER_SIZE)
+dataset = tf.data.Dataset.from_tensor_slices((input_tensor, target_tensor)).shuffle(BUFFER_SIZE)
 dataset = dataset.batch(BATCH_SIZE, drop_remainder=True)
 
 encoder = Encoder(vocab_inp_size, embedding_dim, units, BATCH_SIZE)
@@ -147,7 +139,6 @@ class BahdanauAttention(tf.keras.layers.Layer):
     self.W1 = tf.keras.layers.Dense(units)
     self.W2 = tf.keras.layers.Dense(units)
     self.V = tf.keras.layers.Dense(1)
-
   def call(self, query, values):
     # query hidden state shape == (batch_size, hidden size)
     # query_with_time_axis shape == (batch_size, 1, hidden size)
@@ -166,14 +157,11 @@ class BahdanauAttention(tf.keras.layers.Layer):
     context_vector = tf.reduce_sum(context_vector, axis=1)
     return context_vector, attention_weights
 
-
 attention_layer = BahdanauAttention(10)
-attention_result, attention_weights = attention_layer(
-    sample_hidden, sample_output)
+attention_result, attention_weights = attention_layer(sample_hidden, sample_output)
 
 print("Attention result shape: (batch size, units)", attention_result.shape)
-print("Attention weights shape: (batch_size, sequence_length, 1)",
-      attention_weights.shape)
+print("Attention weights shape: (batch_size, sequence_length, 1)", attention_weights.shape)
 
 
 class Decoder(tf.keras.Model):
@@ -189,7 +177,6 @@ class Decoder(tf.keras.Model):
     self.fc = tf.keras.layers.Dense(vocab_size)
     # used for attention
     self.attention = BahdanauAttention(self.dec_units)
-
   def call(self, x, hidden, enc_output):
     # enc_output shape == (batch_size, max_length, hidden_size)
     context_vector, attention_weights = self.attention(hidden, enc_output)
@@ -238,15 +225,13 @@ checkpoint = tf.train.Checkpoint(optimizer=optimizer,
 
 # checkpoint.restore('D:\\work\\aitestsaves\\ckpt-150')
 
-
 @tf.function
 def train_step(inp, targ, enc_hidden):
   loss = 0
   with tf.GradientTape() as tape:
     enc_output, enc_hidden = encoder(inp, enc_hidden)
     dec_hidden = enc_hidden
-    dec_input = tf.expand_dims(
-        [targ_lang.word_index['<start>']] * BATCH_SIZE, 1)
+    dec_input = tf.expand_dims([targ_lang.word_index['<start>']] * BATCH_SIZE, 1)
     # Teacher forcing - feeding the target as the next input
     for t in range(1, targ.shape[1]):
       # passing enc_output to the decoder
@@ -275,14 +260,13 @@ for epoch in range(EPOCHS):
   # saving (checkpoint) the model every 2 epochs
   if (epoch + 1) % 100 == 0:
     # print(checkpoint_prefix)
-    checkpoint.save(file_prefix=checkpoint_prefix)
+    checkpoint.save(file_prefix=checkpoint_prefix)    
   if total_loss < 0.000001:
     break
   print(f'Epoch {epoch+1} Loss {total_loss/steps_per_epoch:.4f} {total_loss}')
   print(f'Time taken for 1 epoch {time.time()-start:.2f} sec\n')
 
 checkpoint.save(file_prefix=checkpoint_prefix)
-
 
 def evaluate(sentence):
   attention_plot = np.zeros((max_length_targ, max_length_inp))
@@ -293,7 +277,7 @@ def evaluate(sentence):
   inputs = tf.keras.preprocessing.sequence.pad_sequences([inputs],
                                                          maxlen=max_length_inp,
                                                          padding='post')
-  print(inputs)
+  print(inputs)                                                         
   inputs = tf.convert_to_tensor(inputs)
   print("input tensor")
   print(inputs)
@@ -326,8 +310,6 @@ def evaluate(sentence):
 evaluate('good')
 
 # function for plotting the attention weights
-
-
 def plot_attention(attention, sentence, predicted_sentence):
   fig = plt.figure(figsize=(10, 10))
   ax = fig.add_subplot(1, 1, 1)
@@ -352,3 +334,4 @@ def translate(sentence):
 translate(u'good')
 
 evaluate('good')
+
