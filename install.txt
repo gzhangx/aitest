@@ -1,3 +1,4 @@
+HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem@LongPathsEnabled to 1
 pip3 install --user --upgrade tensorflow
 
 python -m pip install -U matplotlib
