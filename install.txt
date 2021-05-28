@@ -1,1 +1,3 @@
 pip3 install --user --upgrade tensorflow
+
+python -m pip install -U matplotlib
