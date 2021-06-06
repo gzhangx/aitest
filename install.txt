@@ -1,4 +1,9 @@
 HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem@LongPathsEnabled to 1
+
+install cudnn and toolkit
+
+
 pip3 install --user --upgrade tensorflow
+pip3 install –-user tensorflow-gpu
 
 python -m pip install -U matplotlib
