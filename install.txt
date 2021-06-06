@@ -5,6 +5,6 @@ install cudnn and toolkit
 
 pip3 install --user --upgrade tensorflow
 pip3 install --user tensorflow-gpu
-
+pip3 install -U scikit-learn
 
 python -m pip install -U matplotlib
